@@ -58,8 +58,9 @@ export function initBackgroundScene(canvas) {
     antialias: true,
     powerPreference: 'high-performance'
   });
+  const maxPixelRatio = window.innerWidth < 768 ? 1.25 : 1.5;
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
 
   // 2. Instantiate Sub-scenes
   quantumSubScene = createQuantumMesh(scene);

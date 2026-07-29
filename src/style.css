@@ -1396,6 +1396,46 @@ a {
   }
 }
 
+@media (max-width: 600px) {
+  .navbar {
+    top: 0.5rem;
+    padding: 0.5rem 0.85rem;
+    width: calc(100% - 1rem);
+  }
+
+  .nav-logo {
+    font-size: 1rem;
+  }
+
+  .theme-btn {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .theme-btn-text {
+    display: none;
+  }
+
+  .hero-headline {
+    font-size: 1.85rem;
+  }
+
+  .btn {
+    padding: 0.65rem 1.2rem;
+    font-size: 0.9rem;
+  }
+
+  .hero-ctas {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-ctas .btn {
+    width: 100%;
+  }
+}
+
+
 /* ----------------------------------------------------
    THEME-SPECIFIC DYNAMIC CSS VARIABLE OVERRIDES (PROFESSIONAL PALETTES)
 ---------------------------------------------------- */

@@ -36,12 +36,29 @@ import {
   Terminal
 } from 'lucide';
 
-// 1. Theme-Aware Futuristic Sound Synthesizer via Web Audio API
-function playCyberSound(frequency = 440, type = 'sine', duration = 0.08) {
-  try {
+// Global AudioContext Singleton for Mobile & Desktop
+let globalAudioCtx = null;
+function getAudioContext() {
+  if (!globalAudioCtx) {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
+    if (AudioCtx) globalAudioCtx = new AudioCtx();
+  }
+  if (globalAudioCtx && globalAudioCtx.state === 'suspended') {
+    globalAudioCtx.resume();
+  }
+  return globalAudioCtx;
+}
+
+// Unlock Mobile Audio on first user touch/tap
+window.addEventListener('touchstart', () => getAudioContext(), { once: true, passive: true });
+window.addEventListener('click', () => getAudioContext(), { once: true, passive: true });
+
+// 1. Theme-Aware Futuristic Sound Synthesizer via Web Audio API (Boosted for Mobile)
+function playCyberSound(frequency = 440, type = 'sine', duration = 0.09) {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
 
@@ -49,7 +66,8 @@ function playCyberSound(frequency = 440, type = 'sine', duration = 0.08) {
     osc.frequency.setValueAtTime(frequency, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(frequency * 1.6, ctx.currentTime + duration);
 
-    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+    // Boosted volume gain (0.28 = 28% volume, loud & clear on phone speakers!)
+    gain.gain.setValueAtTime(0.28, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
 
     osc.connect(gain);
@@ -58,7 +76,7 @@ function playCyberSound(frequency = 440, type = 'sine', duration = 0.08) {
     osc.start();
     osc.stop(ctx.currentTime + duration);
   } catch (err) {
-    // Ignore audio context autoplay restriction errors
+    // Suppress audio context restriction warnings
   }
 }
 
