@@ -1358,8 +1358,33 @@ a {
 
 @media (max-width: 768px) {
   :root {
-    --glass-bg: rgba(15, 23, 42, 0.85);
-    --glass-blur: blur(8px);
+    --glass-bg: rgba(10, 15, 29, 0.94);
+    --glass-blur: none; /* Disable heavy GPU backdrop-filter blur on mobile to eliminate lag */
+  }
+
+  *, *::before, *::after {
+    touch-action: manipulation;
+  }
+
+  .navbar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(10, 15, 29, 0.96) !important;
+  }
+
+  .glass-card {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(10, 15, 29, 0.94) !important;
+    will-change: auto;
+  }
+
+  .glass-card:hover {
+    transform: none !important; /* Prevent hover transform jitter on mobile touch */
+  }
+
+  .reveal-on-scroll.revealed {
+    animation: none !important; /* Disable heavy card flash animation loop on mobile */
   }
 
   .section {
@@ -1401,13 +1426,13 @@ a {
     left: 0;
     right: 0;
     flex-direction: column;
-    background: rgba(10, 15, 29, 0.96);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(10, 15, 29, 0.98);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
     padding: 1.5rem;
     border-radius: var(--radius-md);
     border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.8);
     gap: 1.25rem;
     z-index: 1001;
   }

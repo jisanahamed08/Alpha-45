@@ -36,11 +36,13 @@ export function setShaderMode(mode) {
 }
 
 /**
- * Initializes the Three.js 3D WebGL Background Scene with Scroll-Driven Animations
+ * Initializes the Three.js 3D WebGL Background Scene with Ultra-Fast Mobile Optimization
  * @param {HTMLCanvasElement} canvas - The canvas element to render into
  */
 export function initBackgroundScene(canvas) {
   if (!canvas) return;
+
+  const isMobile = window.innerWidth < 768;
 
   // 1. Scene, Camera & Renderer Setup
   const scene = new THREE.Scene();
@@ -55,12 +57,14 @@ export function initBackgroundScene(canvas) {
   const renderer = new THREE.WebGLRenderer({
     canvas,
     alpha: true,
-    antialias: true,
+    antialias: !isMobile,
     powerPreference: 'high-performance'
   });
-  const maxPixelRatio = window.innerWidth < 768 ? 1.25 : 1.5;
+  
+  // Mobile performance: 1.0x native resolution to prevent GPU bottlenecks
+  const targetPixelRatio = isMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.35);
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
+  renderer.setPixelRatio(targetPixelRatio);
 
   // 2. Instantiate Sub-scenes
   quantumSubScene = createQuantumMesh(scene);
@@ -77,15 +81,18 @@ export function initBackgroundScene(canvas) {
     }
   });
 
-  // 3. Mouse/Touch Pointer Parallax Controller
+  // 3. Pointer Parallax Controller
   const mouse = { targetX: 0, targetY: 0, currentX: 0, currentY: 0 };
 
   function onPointerMove(event) {
+    if (isMobile) return; // Disable parallax calculation overhead on mobile touch
     mouse.targetX = (event.clientX / window.innerWidth) * 2 - 1;
     mouse.targetY = -(event.clientY / window.innerHeight) * 2 + 1;
   }
 
-  window.addEventListener('pointermove', onPointerMove, { passive: true });
+  if (!isMobile) {
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+  }
 
   // 4. Scroll-Driven 3D Animation Controller
   let scrollTargetProgress = 0;
@@ -101,25 +108,37 @@ export function initBackgroundScene(canvas) {
 
   // 5. Window Resize Handler
   function onWindowResize() {
-    const currentMaxRatio = window.innerWidth < 768 ? 1.25 : 1.5;
+    const currentIsMobile = window.innerWidth < 768;
+    const ratio = currentIsMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.35);
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, currentMaxRatio));
+    renderer.setPixelRatio(ratio);
   }
 
   window.addEventListener('resize', onWindowResize, false);
 
-  // 6. Animation Loop & Tab Visibility Handle
+  // 6. 30/60 FPS Throttled Animation Loop
   let animationFrameId = null;
   const clock = new THREE.Clock();
+  let lastFrameTime = 0;
+  const targetFPS = isMobile ? 35 : 60;
+  const frameInterval = 1000 / targetFPS;
 
-  function animate() {
+  function animate(now) {
     animationFrameId = requestAnimationFrame(animate);
+
+    if (isMobile && now - lastFrameTime < frameInterval) {
+      return; // Skip frames on mobile for locked smooth performance
+    }
+    lastFrameTime = now;
+
     const elapsedTime = clock.getElapsedTime();
 
-    mouse.currentX += (mouse.targetX - mouse.currentX) * 0.05;
-    mouse.currentY += (mouse.targetY - mouse.currentY) * 0.05;
+    if (!isMobile) {
+      mouse.currentX += (mouse.targetX - mouse.currentX) * 0.05;
+      mouse.currentY += (mouse.targetY - mouse.currentY) * 0.05;
+    }
     currentScrollProgress += (scrollTargetProgress - currentScrollProgress) * 0.08;
 
     camera.position.x = mouse.currentX * 2.5;
@@ -129,8 +148,7 @@ export function initBackgroundScene(canvas) {
     camera.lookAt(0, 0, 0);
 
     if (quantumSubScene?.group?.visible) {
-      quantumSubScene.group.rotation.y = elapsedTime * 0.1 + currentScrollProgress * Math.PI * 2;
-      quantumSubScene.group.rotation.x = currentScrollProgress * Math.PI * 0.5;
+      quantumSubScene.group.rotation.y = elapsedTime * 0.08 + currentScrollProgress * Math.PI * 2;
       quantumSubScene.update(elapsedTime, mouse);
     }
     if (cyberSubScene?.group?.visible) {
@@ -139,8 +157,7 @@ export function initBackgroundScene(canvas) {
       cyberSubScene.update(elapsedTime, mouse);
     }
     if (plasmaSubScene?.group?.visible) {
-      plasmaSubScene.group.rotation.y = elapsedTime * 0.3 + currentScrollProgress * Math.PI * 3;
-      plasmaSubScene.group.scale.setScalar(1 + currentScrollProgress * 0.35);
+      plasmaSubScene.group.rotation.y = elapsedTime * 0.25 + currentScrollProgress * Math.PI * 3;
       plasmaSubScene.update(elapsedTime, mouse);
     }
     if (matrixSubScene?.group?.visible) {
@@ -159,7 +176,7 @@ export function initBackgroundScene(canvas) {
     } else {
       if (!animationFrameId) {
         clock.start();
-        animate();
+        animate(performance.now());
       }
     }
   }
@@ -167,7 +184,7 @@ export function initBackgroundScene(canvas) {
   document.addEventListener('visibilitychange', onVisibilityChange, false);
 
   clock.start();
-  animate();
+  animate(performance.now());
 
   return {
     setShaderMode,
