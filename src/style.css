@@ -1446,11 +1446,23 @@ a {
 
   .hero-avatar-wrapper {
     margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .avatar-glass-frame {
+    width: 150px !important;
+    height: 150px !important;
+    padding: 5px !important;
+    margin: 0 auto !important;
   }
 
   .hero-profile-img {
-    width: 140px;
-    height: 140px;
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
   }
 
   .hero-headline {
