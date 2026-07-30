@@ -29,10 +29,11 @@ export function createQuantumMesh(scene) {
 
   const particleTexture = createParticleTexture();
 
-  // 2. Particle Constellation Network Setup
+  // 2. Particle Constellation Network Setup (Optimized for Mobile & Desktop)
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const particleCount = isMobile ? 65 : 120;
-  const maxDistance = isMobile ? 3.5 : 5.2;
+  const particleCount = isMobile ? 45 : 85;
+  const maxDistance = isMobile ? 3.5 : 4.8;
+  const maxDistanceSq = maxDistance * maxDistance;
 
   const particlePositions = new Float32Array(particleCount * 3);
   const particleVelocities = [];
@@ -47,9 +48,9 @@ export function createQuantumMesh(scene) {
     particlePositions[i * 3 + 2] = z;
 
     particleVelocities.push({
-      x: (Math.random() - 0.5) * 0.025,
-      y: (Math.random() - 0.5) * 0.025,
-      z: (Math.random() - 0.5) * 0.015
+      x: (Math.random() - 0.5) * 0.02,
+      y: (Math.random() - 0.5) * 0.02,
+      z: (Math.random() - 0.5) * 0.012
     });
   }
 
@@ -60,7 +61,7 @@ export function createQuantumMesh(scene) {
   );
 
   const particleMaterial = new THREE.PointsMaterial({
-    size: isMobile ? 0.7 : 1.1,
+    size: isMobile ? 0.8 : 1.1,
     map: particleTexture,
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -88,7 +89,7 @@ export function createQuantumMesh(scene) {
   const lineMaterial = new THREE.LineBasicMaterial({
     vertexColors: true,
     transparent: true,
-    opacity: 0.8,
+    opacity: 0.75,
     blending: THREE.AdditiveBlending,
     depthWrite: false
   });
@@ -97,8 +98,8 @@ export function createQuantumMesh(scene) {
   group.add(lineMesh);
 
   // 4. Low-Poly Floating Instanced Wireframe Icosahedrons
-  const solidCount = 20;
-  const solidGeometry = new THREE.IcosahedronGeometry(0.65, 0);
+  const solidCount = isMobile ? 10 : 18;
+  const solidGeometry = new THREE.IcosahedronGeometry(0.6, 0);
   const solidMaterial = new THREE.MeshBasicMaterial({
     color: 0x00f2fe,
     wireframe: true,
@@ -128,11 +129,11 @@ export function createQuantumMesh(scene) {
       Math.random() * Math.PI
     );
     const rotSpeed = new THREE.Vector3(
-      (Math.random() - 0.5) * 0.015,
-      (Math.random() - 0.5) * 0.015,
-      (Math.random() - 0.5) * 0.015
+      (Math.random() - 0.5) * 0.012,
+      (Math.random() - 0.5) * 0.012,
+      (Math.random() - 0.5) * 0.012
     );
-    const scale = 0.6 + Math.random() * 0.8;
+    const scale = 0.6 + Math.random() * 0.7;
 
     solidData.push({ pos, rot, rotSpeed, scale, seed: Math.random() * 100 });
   }
@@ -140,7 +141,7 @@ export function createQuantumMesh(scene) {
 
   scene.add(group);
 
-  // 5. Update Loop Animation Handle
+  // 5. Update Loop Animation Handle (Fast Squared Distance Check)
   function update(elapsedTime, mouse) {
     if (!group.visible) return;
 
@@ -162,7 +163,7 @@ export function createQuantumMesh(scene) {
     }
     posAttr.needsUpdate = true;
 
-    // Calculate line connections between close node pairs
+    // Fast Squared Distance check (avoids Math.sqrt CPU bottleneck)
     let lineVertexCount = 0;
     const linePosArr = lineGeometry.attributes.position.array;
     const lineColArr = lineGeometry.attributes.color.array;
@@ -180,9 +181,10 @@ export function createQuantumMesh(scene) {
         const dx = x1 - x2;
         const dy = y1 - y2;
         const dz = z1 - z2;
-        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const distSq = dx * dx + dy * dy + dz * dz;
 
-        if (dist < maxDistance) {
+        if (distSq < maxDistanceSq) {
+          const dist = Math.sqrt(distSq);
           const alpha = 1.0 - dist / maxDistance;
           const pIdx = lineVertexCount * 3;
 
@@ -194,17 +196,17 @@ export function createQuantumMesh(scene) {
           linePosArr[pIdx + 4] = y2;
           linePosArr[pIdx + 5] = z2;
 
-          const r = 0.0 * (1 - alpha) + 0.5 * alpha;
+          const r = 0.2 * alpha;
           const g = 0.95 * alpha;
-          const b = 1.0;
+          const b = 1.0 * alpha;
 
-          lineColArr[pIdx] = r * alpha;
-          lineColArr[pIdx + 1] = g * alpha;
-          lineColArr[pIdx + 2] = b * alpha;
+          lineColArr[pIdx] = r;
+          lineColArr[pIdx + 1] = g;
+          lineColArr[pIdx + 2] = b;
 
-          lineColArr[pIdx + 3] = r * alpha;
-          lineColArr[pIdx + 4] = g * alpha;
-          lineColArr[pIdx + 5] = b * alpha;
+          lineColArr[pIdx + 3] = r;
+          lineColArr[pIdx + 4] = g;
+          lineColArr[pIdx + 5] = b;
 
           lineVertexCount += 2;
         }
@@ -222,7 +224,7 @@ export function createQuantumMesh(scene) {
       data.rot.y += data.rotSpeed.y;
       data.rot.z += data.rotSpeed.z;
 
-      const yOffset = Math.sin(elapsedTime * 0.8 + data.seed) * 0.5;
+      const yOffset = Math.sin(elapsedTime * 0.8 + data.seed) * 0.4;
 
       dummy.position.set(data.pos.x, data.pos.y + yOffset, data.pos.z);
       dummy.rotation.set(data.rot.x, data.rot.y, data.rot.z);

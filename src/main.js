@@ -80,21 +80,30 @@ function playCyberSound(frequency = 440, type = 'sine', duration = 0.09) {
   }
 }
 
-// 2. 3D Holographic Card Tilt Controller
+// 2. 3D Holographic Card Tilt Controller (Optimized for Desktop, Disabled on Mobile Touch)
 function initCardTiltEffect() {
+  if (window.innerWidth < 768) return; // Skip 3D tilt overhead on mobile screens
+
   const cards = document.querySelectorAll('.glass-card, .stat-card, .info-card');
   cards.forEach((card) => {
+    let ticking = false;
     card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-      const rotateX = (y - centerY) / 10;
-      const rotateY = (centerX - x) / 10;
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const rotateX = (y - centerY) / 12;
+          const rotateY = (centerX - x) / 12;
 
-      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-    });
+          card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
 
     card.addEventListener('mouseleave', () => {
       card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';

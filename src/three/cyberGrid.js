@@ -9,20 +9,19 @@ import * as THREE from 'three';
 export function createCyberGrid(scene) {
   const group = new THREE.Group();
 
-  // 1. Grid Plane Geometry Setup
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
   const gridWidth = 70;
   const gridHeight = 70;
-  const segments = 50;
+  const segments = isMobile ? 30 : 45;
 
   const planeGeometry = new THREE.PlaneGeometry(gridWidth, gridHeight, segments, segments);
-  const initialPositions = planeGeometry.attributes.position.array.slice();
 
-  // 2. Custom Shader Material for Cyber Grid Wave
+  // Custom Shader Material for GPU Wave Displacement
   const customShaderMaterial = new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uColorCyan: { value: new THREE.Color(0x00f2fe) },
-      uColorPurple: { value: new THREE.Color(0x7f00ff) }
+      uColorCyan: { value: new THREE.Color(0x38bdf8) },
+      uColorPurple: { value: new THREE.Color(0x6366f1) }
     },
     vertexShader: `
       uniform float uTime;
@@ -74,8 +73,8 @@ export function createCyberGrid(scene) {
   gridMesh.position.z = -5;
   group.add(gridMesh);
 
-  // 3. Floating Cyber Horizon Particles
-  const particleCount = 60;
+  // Floating Horizon Particles
+  const particleCount = isMobile ? 30 : 50;
   const particlePositions = new Float32Array(particleCount * 3);
   const particleSpeeds = [];
 
@@ -85,7 +84,7 @@ export function createCyberGrid(scene) {
     particlePositions[i * 3 + 2] = -25 + Math.random() * 30;
 
     particleSpeeds.push({
-      y: 0.02 + Math.random() * 0.03,
+      y: 0.02 + Math.random() * 0.025,
       x: (Math.random() - 0.5) * 0.01
     });
   }
@@ -94,7 +93,7 @@ export function createCyberGrid(scene) {
   particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
 
   const particleMaterial = new THREE.PointsMaterial({
-    color: 0x00f2fe,
+    color: 0x38bdf8,
     size: 0.6,
     transparent: true,
     opacity: 0.7,
@@ -106,30 +105,12 @@ export function createCyberGrid(scene) {
 
   scene.add(group);
 
-  // 4. Update Loop
+  // Fast GPU Shader Update Loop
   function update(elapsedTime, mouse) {
     if (!group.visible) return;
 
-    // Update shader time uniform
+    // Update shader time uniform on GPU
     customShaderMaterial.uniforms.uTime.value = elapsedTime;
-
-    // CPU displacement for fallback & bounding sync
-    const posAttr = planeGeometry.attributes.position;
-    const posArr = posAttr.array;
-    const count = posAttr.count;
-
-    for (let i = 0; i < count; i++) {
-      const idx = i * 3;
-      const x = initialPositions[idx];
-      const y = initialPositions[idx + 1];
-
-      const wave1 = Math.sin(x * 0.2 + elapsedTime * 2.0) * Math.cos(y * 0.2 + elapsedTime * 1.5);
-      const wave2 = Math.sin(x * 0.4 - elapsedTime * 2.5) * 0.5;
-      const wave3 = Math.cos(Math.sqrt(x * x + y * y) * 0.25 - elapsedTime * 1.8) * 0.5;
-
-      posArr[idx + 2] = (wave1 + wave2 + wave3) * 1.2;
-    }
-    posAttr.needsUpdate = true;
 
     // Update floating horizon particles
     const pPosAttr = particleGeometry.attributes.position;
@@ -149,7 +130,7 @@ export function createCyberGrid(scene) {
     }
     pPosAttr.needsUpdate = true;
 
-    // Subtle parallax tilt on grid mesh
+    // Parallax tilt on grid mesh
     gridMesh.rotation.z = mouse.currentX * 0.08;
     gridMesh.rotation.x = -Math.PI / 2.3 + mouse.currentY * 0.05;
   }

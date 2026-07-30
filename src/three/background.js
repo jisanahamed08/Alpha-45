@@ -101,10 +101,11 @@ export function initBackgroundScene(canvas) {
 
   // 5. Window Resize Handler
   function onWindowResize() {
+    const currentMaxRatio = window.innerWidth < 768 ? 1.25 : 1.5;
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, currentMaxRatio));
   }
 
   window.addEventListener('resize', onWindowResize, false);
